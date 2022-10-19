@@ -6,6 +6,7 @@ using Marten.Events.Daemon.Resiliency;
 using Marten.Pagination;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json.Serialization;
+using System.Threading;
 using static CodeReview.TopicManagement.Api.StoreOptionsServices;
 using static CodeReview.TopicManagement.Api.TopicProposal.TopicProposalService;
 using static Microsoft.AspNetCore.Http.Results;
@@ -46,6 +47,18 @@ app.MapPost("api/requests/",
     }
 ).WithTags("TopicRequest");
 
+app.MapPost("api/requests/{requestId:guid}/schedule",
+    async (
+        IDocumentSession documentSession,
+        Guid requestId,
+        ScheduleTopicRequest body,
+        CancellationToken ct) =>
+    {
+        await documentSession.Events.WriteToAggregate<CodeReviewTopic>(requestId, stream =>
+            stream.AppendOne(Handle(new ScheduleTopic(requestId))), ct);
+    }
+).WithTags("TopicRequest");
+
 app.MapGet("api/requests/",
     (IQuerySession querySession, [FromQuery] int? pageNumber, [FromQuery] int? pageSize,
             CancellationToken ct) =>
@@ -68,4 +81,4 @@ app.MapControllers();
 app.Run();
 
 public record ProposeTopicRequest(string Label, string Description, string Requester);
-
+public record ScheduleTopicRequest();

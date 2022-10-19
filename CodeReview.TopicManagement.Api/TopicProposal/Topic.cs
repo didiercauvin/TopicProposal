@@ -5,7 +5,8 @@
 
     public enum CodeReviewTopicStatus
     {
-        Requested
+        Requested,
+        Scheduled
     }
 
     public record CodeReviewTopic(
@@ -17,5 +18,8 @@
     {
         public static CodeReviewTopic Create(TopicRequested requested) =>
             new(requested.Id, requested.Label, requested.Label, requested.Requester);
+
+        public CodeReviewTopic Apply(TopicScheduled categorised) =>
+            this with { Status = CodeReviewTopicStatus.Scheduled };
     }
 }

@@ -39,22 +39,58 @@ app.MapPost("api/requests/",
     {
         var topicId = Guid.NewGuid();
 
-        documentSession.Events.StartStream<CodeReviewTopic>(topicId, Handle(new ProposeTopic(topicId, body.Label, body.Description, body.Requester)));
-        await documentSession.SaveChangesAsync(token: ct);
+        await documentSession.Save<CodeReviewTopic>(topicId, 
+            Handle(new ProposeTopic(topicId, body.Label, body.Description, body.Requester, body.ScheduleDate)), ct);
 
         return Created($"api/requests/{topicId}", topicId);
     }
 ).WithTags("TopicRequest");
 
-app.MapPost("api/requests/{requestId:guid}/schedule",
+app.MapPost("api/requests/{topicId:guid}/schedule",
     async (
         IDocumentSession documentSession,
-        Guid requestId,
+        Guid topicId,
         ScheduleTopicRequest body,
         CancellationToken ct) =>
     {
-        await documentSession.GetAndUpdate<CodeReviewTopic>(requestId, topic =>
-            Handle(topic, new ScheduleTopic(requestId, body.ScheduleDate)), ct);
+        await documentSession.GetAndUpdate<CodeReviewTopic>(topicId, topic =>
+            Handle(topic, new ScheduleTopic(topicId)), ct);
+    }
+).WithTags("TopicRequest");
+
+app.MapPost("api/requests/{topicId:guid}/propose-reschedule",
+    async (
+        IDocumentSession documentSession,
+        Guid topicId,
+        ProposeTopicRescheduleRequest body,
+        CancellationToken ct) =>
+    {
+        await documentSession.GetAndUpdate<CodeReviewTopic>(topicId, topic =>
+            Handle(topic, new ProposeRescheduleTopic(topicId, body.RescheduleDate)), ct);
+    }
+).WithTags("TopicRequest");
+
+app.MapPost("api/requests/{topicId:guid}/accept-reschedule",
+    async (
+        IDocumentSession documentSession,
+        Guid topicId,
+        AcceptTopicRescheduleRequest body,
+        CancellationToken ct) =>
+    {
+        await documentSession.GetAndUpdate<CodeReviewTopic>(topicId, topic =>
+            Handle(topic, new AcceptTopicReschedule(topicId)), ct);
+    }
+).WithTags("TopicRequest");
+
+app.MapPost("api/requests/{topicId:guid}/refuse-reschedule",
+    async (
+        IDocumentSession documentSession,
+        Guid topicId,
+        RefuseTopicRescheduleRequest body,
+        CancellationToken ct) =>
+    {
+        await documentSession.GetAndUpdate<CodeReviewTopic>(topicId, topic =>
+            Handle(topic, new RefuseTopicReschedule(topicId)), ct);
     }
 ).WithTags("TopicRequest");
 
@@ -79,5 +115,8 @@ app.MapControllers();
 
 app.Run();
 
-public record ProposeTopicRequest(string Label, string Description, string Requester);
-public record ScheduleTopicRequest(DateTimeOffset ScheduleDate);
+public record ProposeTopicRequest(string Label, string Description, DateTimeOffset ScheduleDate, string Requester);
+public record ScheduleTopicRequest();
+public record ProposeTopicRescheduleRequest(DateTimeOffset RescheduleDate);
+public record AcceptTopicRescheduleRequest();
+public record RefuseTopicRescheduleRequest();

@@ -28,7 +28,6 @@ builder.Services.Configure<JsonOptions>(o => o.SerializerOptions.Converters.Add(
 builder.Services.Configure<Microsoft.AspNetCore.Mvc.JsonOptions>(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.AddScoped<IEventBus, FakeEventBus>();
-builder.Services.AddEventHandler<TopicRequested, TopicProposalSaga>();
 
 var app = builder.Build();
 
@@ -54,8 +53,8 @@ app.MapPost("api/requests/{requestId:guid}/schedule",
         ScheduleTopicRequest body,
         CancellationToken ct) =>
     {
-        await documentSession.Events.WriteToAggregate<CodeReviewTopic>(requestId, stream =>
-            stream.AppendOne(Handle(new ScheduleTopic(requestId))), ct);
+        await documentSession.GetAndUpdate<CodeReviewTopic>(requestId, topic =>
+            Handle(topic, new ScheduleTopic(requestId, body.ScheduleDate)), ct);
     }
 ).WithTags("TopicRequest");
 
@@ -81,4 +80,4 @@ app.MapControllers();
 app.Run();
 
 public record ProposeTopicRequest(string Label, string Description, string Requester);
-public record ScheduleTopicRequest();
+public record ScheduleTopicRequest(DateTimeOffset ScheduleDate);

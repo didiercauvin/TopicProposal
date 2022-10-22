@@ -19,7 +19,7 @@
         public static CodeReviewTopic Create(TopicRequested requested) =>
             new(requested.Id, requested.Label, requested.Label, requested.Requester);
 
-        public CodeReviewTopic Apply(TopicScheduled categorised) =>
+        public CodeReviewTopic Apply(TopicScheduled scheduled) =>
             this with { Status = CodeReviewTopicStatus.Scheduled };
     }
 }

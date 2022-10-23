@@ -37,7 +37,7 @@ namespace CodeReview.TopicManagement.Api
             options.Projections.Add(
                 new MartenSubscription(new DummyEventsPublisher(sp)),
                 ProjectionLifecycle.Async,
-                "MartenSubscription");
+                "EventsSubscription");
 
             return options;
         }
@@ -113,6 +113,14 @@ namespace CodeReview.TopicManagement.Api
         )
         {
             return consumer.ConsumeAsync(streams, ct);
+        }
+    }
+
+    public class DummyCommandsPublisher : IMartenEventsConsumer
+    {
+        public Task ConsumeAsync(IReadOnlyList<StreamAction> streamActions, CancellationToken ct)
+        {
+            throw new NotImplementedException();
         }
     }
 

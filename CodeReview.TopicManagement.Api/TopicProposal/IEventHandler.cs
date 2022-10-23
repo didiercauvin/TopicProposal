@@ -5,4 +5,9 @@
         Task Handle(TEvent @event, CancellationToken ct);
     }
 
+    public interface ICommandHandler<in TCommand>
+    {
+        Task Handle(TCommand command, CancellationToken ct);
+    }
+
 }

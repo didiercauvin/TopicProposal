@@ -11,16 +11,12 @@ namespace CodeReview.TopicManagement.Api.TopicProposal
 
     public static class TopicProposalService
     {
-        public static TopicRequested Handle(ProposeTopic command)
-        {
-            return new TopicRequested(command.TopicId, command.Label, command.Description, 
+        public static TopicRequested Handle(ProposeTopic command) =>
+            new TopicRequested(command.TopicId, command.Label, command.Description,
                 command.Requester, command.ScheduleDate, DateTimeOffset.UtcNow);
-        }
 
-        public static TopicScheduled Handle(CodeReviewTopic topic, ScheduleTopic command)
-        {
-            return new TopicScheduled(command.TopicId, DateTimeOffset.UtcNow);
-        }
+        public static TopicScheduled Handle(CodeReviewTopic topic, ScheduleTopic command) =>
+            new TopicScheduled(command.TopicId, DateTimeOffset.UtcNow);
 
         public static TopicRescheduleProposed Handle(CodeReviewTopic topic, ProposeRescheduleTopic command) =>
             new TopicRescheduleProposed(command.TopicId, command.RescheduleDate, DateTimeOffset.UtcNow);

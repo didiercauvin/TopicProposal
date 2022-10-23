@@ -28,19 +28,24 @@ builder.Services.Configure<JsonOptions>(o => o.SerializerOptions.Converters.Add(
 builder.Services.Configure<Microsoft.AspNetCore.Mvc.JsonOptions>(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.AddScoped<IEventBus, FakeEventBus>();
+builder.Services.AddScoped<ICommandBus, FakeCommandBus>();
+builder.Services.AddEventHandler<TopicRequested, TopicProposalSaga>();
+builder.Services.AddCommandHandler<ProposeTopic, CommandHandlers>();
+builder.Services.AddCommandHandler<ScheduleTopic, CommandHandlers>();
 
 var app = builder.Build();
 
 app.MapPost("api/requests/",
     async (
-        IDocumentSession documentSession,
+        ICommandBus commandBus,
         ProposeTopicRequest body,
         CancellationToken ct) =>
     {
         var topicId = Guid.NewGuid();
 
-        await documentSession.Save<CodeReviewTopic>(topicId, 
-            Handle(new ProposeTopic(topicId, body.Label, body.Description, body.Requester, body.ScheduleDate)), ct);
+        await commandBus.Send(
+            new ProposeTopic(topicId, body.Label, body.Description, body.Requester, body.ScheduleDate), 
+            ct);
 
         return Created($"api/requests/{topicId}", topicId);
     }
@@ -48,14 +53,10 @@ app.MapPost("api/requests/",
 
 app.MapPost("api/requests/{topicId:guid}/schedule",
     async (
-        IDocumentSession documentSession,
+        ICommandHandler<ScheduleTopic> commandHandler,
         Guid topicId,
         ScheduleTopicRequest body,
-        CancellationToken ct) =>
-    {
-        await documentSession.GetAndUpdate<CodeReviewTopic>(topicId, topic =>
-            Handle(topic, new ScheduleTopic(topicId)), ct);
-    }
+        CancellationToken ct) => await commandHandler.Handle(new ScheduleTopic(topicId), ct)
 ).WithTags("TopicRequest");
 
 app.MapPost("api/requests/{topicId:guid}/propose-reschedule",
